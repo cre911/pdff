@@ -15,30 +15,38 @@ def detect_supplier(text):
     else:
         return "unknown"
 
-# --- ACC Distribution Parser (Fixed Missing Lines) ---
+# --- ACC Distribution Parser (Improved Line-by-Line Processing) ---
 def parse_acc_distribution(text):
-    # New regex to capture product lines while allowing flexible spacing
-    pattern = re.compile(
-        r"(?P<kodas>[A-Za-z0-9-]+)\s+\d{5,6}\s+.*?\s+(?P<qty>\d+,\d{2})\s+vnt\s+[\d,]+\s+(?P<price>[\d,]+)"
-    )
+    lines = text.split("\n")  # Split the text into individual lines
+    extracted_data = []
     
-    lines = []
-    for match in pattern.finditer(text):
-        kodas = match.group("kodas")
-        qty = match.group("qty")
-        price = match.group("price")
+    for i, line in enumerate(lines):
+        parts = line.split()
+        
+        if len(parts) < 5:
+            continue  # Skip lines that are too short to be valid
 
-        # Extra check to avoid skipping valid product codes
-        if len(kodas) > 3 and not re.match(r"^\d{1,2}$", kodas):  
-            lines.append(f"{kodas}\t{qty}\t\t{price}")
-        else:
-            print(f"⚠️ Skipped: {kodas}")  # Debugging
+        kodas = parts[0]  # Assume first item is the product code
+        qty_index = None
+        price_index = None
 
-    # Fallback check: If no items extracted, return a debug message
-    if not lines:
-        print("❌ No valid product lines found. Need further debugging.")
-    
-    return lines
+        # Identify indices dynamically
+        for j, part in enumerate(parts):
+            if "vnt" in part:  
+                qty_index = j - 1  # Quantity should be before "vnt"
+            if "," in part and qty_index is not None and j > qty_index:
+                price_index = j  # Price should be after quantity
+
+        # If valid data is found, append it to results
+        if qty_index and price_index:
+            qty = parts[qty_index]
+            price = parts[price_index]
+
+            # Ensure correct format
+            if len(kodas) > 3 and qty.replace(",", "").isdigit():
+                extracted_data.append(f"{kodas}\t{qty}\t\t{price}")
+
+    return extracted_data
 
 # --- msonic Parser ---
 def parse_msonic(text):
