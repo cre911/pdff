@@ -15,33 +15,34 @@ def detect_supplier(text):
     else:
         return "unknown"
 
-# --- ACC Distribution Parser (Fix for Correct Price Column) ---
+# --- ACC Distribution Parser (Fix for Correct Price Extraction) ---
 def parse_acc_distribution(text):
-    lines = text.split("\n")  # Split the text into individual lines
+    lines = text.split("\n")  # Split text into lines
     extracted_data = []
 
     for line in lines:
         parts = line.split()
 
-        if len(parts) < 6:  # Ensure it's a valid line with enough data points
+        if len(parts) < 6:  # Skip lines that don't have enough data
             continue  
 
         kodas = parts[0]  # First part is the product code
         qty_index = None
         price_index = None
 
-        # Identify correct indices dynamically
+        # Identify quantity and correct price dynamically
         for i, part in enumerate(parts):
             if "vnt" in part:  
-                qty_index = i - 1  # Quantity should be right before "vnt"
+                qty_index = i - 1  # Quantity is before "vnt"
             if "," in part and qty_index is not None and i > qty_index:
-                price_index = i  # First number after quantity is the unit price
+                if "21%" not in parts[i + 1] if i + 1 < len(parts) else True:  # Ensure it's not VAT
+                    price_index = i  # First number after quantity is unit price
 
         if qty_index and price_index:
             qty = parts[qty_index]
             price = parts[price_index]
 
-            # Ensure it's formatted correctly and ignore errors
+            # Ensure valid format before saving
             if len(kodas) > 3 and qty.replace(",", "").isdigit():
                 extracted_data.append(f"{kodas}\t{qty}\t\t{price}")
 
