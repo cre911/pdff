@@ -15,18 +15,22 @@ def detect_supplier(text):
     else:
         return "unknown"
 
-# --- ACC Distribution Parser (Fixes Date Issue) ---
+# --- ACC Distribution Parser (Fix for Incorrect Number Extraction) ---
 def parse_acc_distribution(text):
-    # Updated regex to avoid extracting dates like 2025.03.12
+    # Updated regex to extract only valid product codes, ignoring dates or incorrect numbers
     pattern = re.compile(
-        r"(?P<kodas>[A-Za-z0-9-]+)\s+\d+\s+.*?\s+(?P<qty>\d+,\d{2})\s+vnt\s+[\d,]+\s+(?P<price>[\d,]+)"
+        r"(?P<kodas>[A-Za-z0-9-]+)\s+\d{6}\s+.*?\s+(?P<qty>\d+,\d{2})\s+vnt\s+[\d,]+\s+(?P<price>[\d,]+)"
     )
     lines = []
     for match in pattern.finditer(text):
         kodas = match.group("kodas")
         qty = match.group("qty")
         price = match.group("price")
-        lines.append(f"{kodas}\t{qty}\t\t{price}")
+
+        # Ensure extracted kodas is not just a small number (e.g., "12")
+        if not re.match(r"^\d{1,2}$", kodas):  
+            lines.append(f"{kodas}\t{qty}\t\t{price}")
+    
     return lines
 
 # --- msonic Parser ---
