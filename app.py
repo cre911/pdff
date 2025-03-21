@@ -15,10 +15,11 @@ def detect_supplier(text):
     else:
         return "unknown"
 
-# --- ACC Distribution Parser ---
+# --- ACC Distribution Parser (Fixes Date Issue) ---
 def parse_acc_distribution(text):
+    # Updated regex to avoid extracting dates like 2025.03.12
     pattern = re.compile(
-        r"(?P<kodas>\S+)\s+\d+\s+.*?\s+(?P<qty>\d+,\d{2})\s+vnt\s+[\d,]+\s+(?P<price>[\d,]+)"
+        r"(?P<kodas>[A-Za-z0-9-]+)\s+\d+\s+.*?\s+(?P<qty>\d+,\d{2})\s+vnt\s+[\d,]+\s+(?P<price>[\d,]+)"
     )
     lines = []
     for match in pattern.finditer(text):
