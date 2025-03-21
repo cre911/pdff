@@ -15,11 +15,11 @@ def detect_supplier(text):
     else:
         return "unknown"
 
-# --- ACC Distribution Parser (Fix for Incorrect Number Extraction) ---
+# --- ACC Distribution Parser (Fix for Missing Lines) ---
 def parse_acc_distribution(text):
-    # Updated regex to extract only valid product codes, ignoring dates or incorrect numbers
+    # Extract product codes (letters, numbers, dashes) and ensure valid data
     pattern = re.compile(
-        r"(?P<kodas>[A-Za-z0-9-]+)\s+\d{6}\s+.*?\s+(?P<qty>\d+,\d{2})\s+vnt\s+[\d,]+\s+(?P<price>[\d,]+)"
+        r"(?P<kodas>[A-Za-z0-9-]+)\s+\d+\s+.*?\s+(?P<qty>\d+,\d{2})\s+vnt\s+[\d,]+\s+(?P<price>[\d,]+)"
     )
     lines = []
     for match in pattern.finditer(text):
@@ -27,9 +27,11 @@ def parse_acc_distribution(text):
         qty = match.group("qty")
         price = match.group("price")
 
-        # Ensure extracted kodas is not just a small number (e.g., "12")
-        if not re.match(r"^\d{1,2}$", kodas):  
+        # Additional check to avoid skipping valid product codes
+        if len(kodas) > 3 and not re.match(r"^\d{1,2}$", kodas):  
             lines.append(f"{kodas}\t{qty}\t\t{price}")
+        else:
+            print(f"⚠️ Skipped incorrect data: {kodas}")  # Debugging in case of missing lines
     
     return lines
 
