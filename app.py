@@ -21,30 +21,20 @@ def parse_acc_distribution(text):
     extracted_data = []
 
     for line in lines:
-        parts = line.split()
+        parts = re.split(r"\s{2,}", line.strip())  # Use double spaces as separators
 
-        if len(parts) < 6:  # Skip lines that don't have enough data
+        if len(parts) < 4:  # Ensure enough columns are present
             continue  
 
         kodas = parts[0]  # First part is the product code
-        qty_index = None
-        price_index = None
+        qty = parts[1]  # Second column is the quantity
+        price = parts[2]  # Third column should be "Kaina su komp. atl."
 
-        # Identify quantity and correct price dynamically
-        for i, part in enumerate(parts):
-            if "vnt" in part:  
-                qty_index = i - 1  # Quantity is before "vnt"
-            if "," in part and qty_index is not None and i > qty_index:
-                if "21%" not in parts[i + 1] if i + 1 < len(parts) else True:  # Ensure it's not VAT
-                    price_index = i  # First number after quantity is unit price
+        # Ensure we correctly extract only numbers (not VAT, %, or totals)
+        if not re.search(r"\d+,\d+", price):  # If price doesn't match a valid format, skip
+            continue
 
-        if qty_index and price_index:
-            qty = parts[qty_index]
-            price = parts[price_index]
-
-            # Ensure valid format before saving
-            if len(kodas) > 3 and qty.replace(",", "").isdigit():
-                extracted_data.append(f"{kodas}\t{qty}\t\t{price}")
+        extracted_data.append(f"{kodas}\t{qty}\t\t{price}")
 
     return extracted_data
 
