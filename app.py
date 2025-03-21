@@ -15,23 +15,25 @@ def detect_supplier(text):
     else:
         return "unknown"
 
-# --- ACC Distribution Parser (Fix for Correct Price Extraction) ---
+# --- ACC Distribution Parser (Fix for Correct Data Extraction) ---
 def parse_acc_distribution(text):
     lines = text.split("\n")  # Split text into lines
     extracted_data = []
 
     for line in lines:
-        parts = re.split(r"\s{2,}", line.strip())  # Use double spaces as separators
+        # Replace multiple spaces with a single tab for consistent splitting
+        line = re.sub(r"\s{2,}", "\t", line.strip())  
+        parts = line.split("\t")
 
-        if len(parts) < 4:  # Ensure enough columns are present
+        if len(parts) < 4:  # Ensure there are enough columns
             continue  
 
-        kodas = parts[0]  # First part is the product code
-        qty = parts[1]  # Second column is the quantity
-        price = parts[2]  # Third column should be "Kaina su komp. atl."
+        kodas = parts[0]  # First column is the product code
+        qty = parts[1]  # Second column is quantity
+        price = parts[2]  # Third column should be unit price
 
-        # Ensure we correctly extract only numbers (not VAT, %, or totals)
-        if not re.search(r"\d+,\d+", price):  # If price doesn't match a valid format, skip
+        # Validate extracted price format (must be numeric with commas)
+        if not re.match(r"^\d+,\d+$", price):  
             continue
 
         extracted_data.append(f"{kodas}\t{qty}\t\t{price}")
