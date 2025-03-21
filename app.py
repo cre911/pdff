@@ -15,23 +15,28 @@ def detect_supplier(text):
     else:
         return "unknown"
 
-# --- ACC Distribution Parser (Fix for Missing Lines) ---
+# --- ACC Distribution Parser (Improved Extraction Logic) ---
 def parse_acc_distribution(text):
-    # Extract product codes (letters, numbers, dashes) and ensure valid data
+    # Improved regex to capture correct product lines
     pattern = re.compile(
-        r"(?P<kodas>[A-Za-z0-9-]+)\s+\d+\s+.*?\s+(?P<qty>\d+,\d{2})\s+vnt\s+[\d,]+\s+(?P<price>[\d,]+)"
+        r"(?P<kodas>[A-Za-z0-9-]+)\s+\d{6}\s+.*?\s+(?P<qty>\d+,\d{2})\s+vnt\s+[\d,]+\s+(?P<price>[\d,]+)"
     )
+    
     lines = []
     for match in pattern.finditer(text):
         kodas = match.group("kodas")
         qty = match.group("qty")
         price = match.group("price")
 
-        # Additional check to avoid skipping valid product codes
+        # Ensure extracted kodas is a valid product code
         if len(kodas) > 3 and not re.match(r"^\d{1,2}$", kodas):  
             lines.append(f"{kodas}\t{qty}\t\t{price}")
         else:
-            print(f"⚠️ Skipped incorrect data: {kodas}")  # Debugging in case of missing lines
+            print(f"⚠️ Skipped invalid data: {kodas}")  # Debugging
+
+    # Check if extraction failed and log the issue
+    if not lines:
+        print("❌ No valid product lines extracted. Need further debugging.")
     
     return lines
 
